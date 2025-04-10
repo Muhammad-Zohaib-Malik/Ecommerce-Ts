@@ -1,4 +1,4 @@
-import { isAdmin } from "./../middlewares/auth.middleware.js";
+import { isAdmin, protectRoute } from "./../middlewares/auth.middleware.js";
 import { Router } from "express";
 import {
   deleteUser,
@@ -6,13 +6,16 @@ import {
   getUser,
   login,
   logout,
+  refreshToken,
   signup,
 } from "../controllers/user.controller.js";
 
 const router = Router();
 router.post("/signup", signup);
 router.post("/login", login);
-router.post("/logout", logout);
+router.post("/logout",protectRoute, logout);
+router.post("/refresh-token",protectRoute, refreshToken);
+
 
 router.get("/all", isAdmin, getAllUsers);
 
