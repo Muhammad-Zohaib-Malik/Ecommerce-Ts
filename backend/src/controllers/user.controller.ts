@@ -130,6 +130,16 @@ export const login = asyncHandler(async (req, res) => {
 
 export const logout = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user._id;
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: "Unauthorized: user not found in request",
+      });
+      return;
+    }
+
     const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
@@ -141,23 +151,8 @@ export const logout = asyncHandler(
     }
 
     try {
-      const decoded = jwt.verify(
-        refreshToken,
-        process.env.REFRESH_TOKEN_SECRET as string
-      ) as JwtPayload;
+      await redis.del(`refresh_token:${userId}`);
 
-      if (!decoded?.userId) {
-        res.status(401).json({
-          success: false,
-          message: "Invalid token: user ID missing",
-        });
-        return;
-      }
-
-      // Remove token from Redis (or your token store)
-      await redis.del(`refresh_token${decoded.userId}`);
-
-      // Clear cookies
       res.clearCookie("accessToken", {
         httpOnly: true,
         secure: true,
@@ -181,6 +176,55 @@ export const logout = asyncHandler(
       });
       return;
     }
+  }
+);
+
+export const refreshToken = asyncHandler(
+  async (req: Request, res: Response) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      res.status(400).json({
+        success: false,
+        message: "No refresh token provided",
+      });
+      return;
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET as string
+      ) as JwtPayload;
+    } catch (error) {
+      res.status(401).json({
+        success: false,
+        message: "Invalid or expired refresh token",
+      });
+      return;
+    }
+
+    const accessToken = jwt.sign(
+      { userId: decoded.userId },
+      process.env.ACCESS_TOKEN_SECRET as string,
+      {
+        expiresIn: "15m",
+      }
+    );
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+    return;
   }
 );
 
