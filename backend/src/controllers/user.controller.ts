@@ -3,7 +3,7 @@ import { User } from "../models/user.model.js";
 import { asyncHandler } from "../middlewares/error.middleware.js";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { redis } from "../config/redis.js";
-
+import { IUser } from "../models/user.model.js";
 const generateTokens = (userId: string) => {
   const accessToken = jwt.sign(
     { userId },
@@ -94,7 +94,8 @@ export const login = asyncHandler(async (req, res) => {
     });
     return;
   }
-  const user = await User.findOne({ email });
+
+  const user = await User.findOne({ email }) ;
   if (!user) {
     res.status(401).json({
       success: false,
@@ -102,11 +103,12 @@ export const login = asyncHandler(async (req, res) => {
     });
     return;
   }
+
   const isPasswordValid = await user.comparePassword(password);
   if (!isPasswordValid) {
     res.status(401).json({
       success: false,
-      message: "Invalid email or password",
+      message: "Invalid email or password", 
     });
     return;
   }

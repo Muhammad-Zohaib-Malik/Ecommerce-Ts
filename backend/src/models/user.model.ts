@@ -1,21 +1,27 @@
-import mongoose from "mongoose";
+import mongoose, { Document, Model, Schema, Types } from "mongoose";
 import bcrypt from "bcrypt";
 
-interface IUser extends Document {
+interface ICartItem {
+  quantity: number;
+  product: Types.ObjectId;
+}
+
+export enum UserRole {
+  ADMIN = "admin",
+  USER = "user",
+}
+
+export interface IUser extends Document {
+  _id: Types.ObjectId;
   name: string;
   email: string;
   password: string;
-  role: "admin" | "user";
-  cartItems: Array<{
-    quantity: number;
-    product: mongoose.Types.ObjectId;
-  }>;
+  role: string;
+  cartItems: ICartItem[];
   comparePassword(candidatePassword: string): Promise<boolean>;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
-const userSchema = new mongoose.Schema(
+const userSchema:Schema<IUser> = new Schema(
   {
     name: {
       type: String,
@@ -39,15 +45,15 @@ const userSchema = new mongoose.Schema(
           default: 1,
         },
         product: {
-          type: mongoose.Schema.Types.ObjectId,
+          type: Types.ObjectId,
           ref: "Product",
         },
       },
     ],
     role: {
       type: String,
-      enum: ["admin", "user"],
-      default: "user",
+      enum: Object.values(UserRole),
+      default: UserRole.USER,
     },
   },
   {
@@ -55,7 +61,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.pre("save", async function (next) {
+userSchema.pre<IUser>("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
@@ -65,4 +71,4 @@ userSchema.methods.comparePassword = async function (password: string) {
   return bcrypt.compare(password, this.password);
 };
 
-export const User = mongoose.model<IUser>("User", userSchema);
+export const User:Model<IUser> = mongoose.model<IUser>("User", userSchema);

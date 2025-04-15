@@ -1,6 +1,8 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { asyncHandler } from "./error.middleware.js";
 import { User } from "../models/user.model.js";
+import { IUser } from "../models/user.model.js";
+
 
 interface DecodedToken extends JwtPayload {
   userId: string;
@@ -10,10 +12,11 @@ declare global {
   namespace Express {
     interface Request {
       userId: string;
-      user: InstanceType<typeof User>;
+      user:IUser
     }
   }
 }
+
 
 export const protectRoute = asyncHandler(async (req, res, next) => {
   const accessToken = req.cookies.accessToken;
@@ -29,11 +32,12 @@ export const protectRoute = asyncHandler(async (req, res, next) => {
     const decoded = jwt.verify(
       accessToken,
       process.env.ACCESS_TOKEN_SECRET as string
-    ) as DecodedToken;
+    )  as DecodedToken;
 
-    req.userId = decoded.userId;
+    req.userId = decoded.userId ;
+     
 
-    const user = await User.findById(decoded.userId).select("-password");
+    const user = await User.findById(decoded.userId).select("-password") ;
 
     if (!user) {
       res.status(401).json({ message: "User not found" });
