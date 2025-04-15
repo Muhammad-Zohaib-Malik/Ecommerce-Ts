@@ -1,23 +1,22 @@
-import {S3Client} from '@aws-sdk/client-s3';
+import { S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
-
+import dotenv from "dotenv";
+dotenv.config();
 
 export const s3Client = new S3Client({
-    region: process.env.AWS_REGION,
-    credentials:{
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
-    }
-})
-
-
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
+  },
+});
 export const uploadPhotos = async (files: Express.Multer.File[]) => {
   const photoData = await Promise.all(
     files.map(async (file) => {
       const key = `products/${Date.now()}-${file.originalname}`;
 
       const uploadParams = {
-        Bucket: process.env.S3_BUCKET_NAME!,
+        Bucket: process.env.AWS_BUCKET_NAME,
         Key: key,
         Body: file.buffer,
         ContentType: file.mimetype,
@@ -39,5 +38,5 @@ export const uploadPhotos = async (files: Express.Multer.File[]) => {
     })
   );
 
-  return photoData; 
+  return photoData;
 };
