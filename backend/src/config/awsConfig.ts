@@ -32,7 +32,7 @@ export const uploadPhotos = async (files: Express.Multer.File[]) => {
       }
 
       return {
-        url: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`,
+        url: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`,
         key: key,
       };
     })
