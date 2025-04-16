@@ -1,4 +1,4 @@
-import { S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectsCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import dotenv from "dotenv";
 dotenv.config();
@@ -39,4 +39,28 @@ export const uploadPhotos = async (files: Express.Multer.File[]) => {
   );
 
   return photoData;
+};
+
+
+
+export const deletePhotosByKeys = async (keys: string[]) => {
+  if (!keys || keys.length === 0) return;
+
+  const deleteParams = {
+    Bucket: process.env.AWS_BUCKET_NAME!,
+    Delete: {
+      Objects: keys.map((key) => ({ Key: key })),
+    },
+  };
+
+  try {
+    const result = await s3Client.send(new DeleteObjectsCommand(deleteParams));
+    return {
+      deleted: result.Deleted,
+      errors: result.Errors || [],
+    };
+  } catch (error) {
+    console.error("Error deleting photos:", error);
+    throw new Error("Failed to delete photos from S3");
+  }
 };
